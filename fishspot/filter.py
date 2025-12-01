@@ -87,20 +87,21 @@ def percentile_filter(spots, percentile):
     return spots[ spots[:, -1] >= thresh ]
 
 
-def density_filter(spots, radius, neighbor_threshold):
+def density_filter(spots, radius, neighbor_threshold, inverted=False):
     """
     """
 
     # get spot-to-spot distances
     tree = cKDTree(spots[:, :3])
-    dok = tree.sparse_distance_matrix(tree, radius)
-    csr = dok.tocsr()
+    neighbors = tree.query_ball_tree(tree, radius)
 
     # determine loner spots, remove them and return
     density_filter = np.ones(spots.shape[0], dtype=bool)
-    for iii in range(spots.shape[0]):
-        if csr[iii].count_nonzero() < neighbor_threshold:
+    for iii, neighbors_list in enumerate(neighbors):
+        if len(neighbors_list) < neighbor_threshold:
             density_filter[iii] = False
+    if inverted:
+        density_filter = ~density_filter
     return spots[density_filter]
 
 
