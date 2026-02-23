@@ -12,7 +12,7 @@ def get_context(spot, image, radius):
         p[1]-r:p[1]+r+1,
         p[2]-r:p[2]+r+1
     ]
-    if np.product(w.shape) != (2*r+1)**3:
+    if np.prod(w.shape) != (2*r+1)**3:
         return None
     return w.flatten()
 
