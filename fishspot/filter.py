@@ -87,18 +87,32 @@ def percentile_filter(spots, percentile):
     return spots[ spots[:, -1] >= thresh ]
 
 
-def density_filter(spots, radius, neighbor_threshold, inverted=False):
+def density_filter(
+    spots, radius, neighbor_threshold,
+    weight_by_intensity=False,
+    weight_by_size=False,
+    inverted=False
+):
     """
     """
 
-    # get spot-to-spot distances
+    # get neighbors lists
     tree = cKDTree(spots[:, :3])
     neighbors = tree.query_ball_tree(tree, radius)
 
-    # determine loner spots, remove them and return
+    # get count per spot, weight by intensity and/or size
+    counts = np.ones(spots.shape[0], dtype=np.uint16)
+    if weight_by_intensity:
+        intensities = spots[:, -1]
+        counts = counts * intensities / np.median(intensities)
+    if weight_by_size:
+        volumes = np.prod(spots[:, 3:6], axis=1)
+        counts = counts * volumes / np.min(volumes)
+
+    # check each point for sufficient neighborhood density
     density_filter = np.ones(spots.shape[0], dtype=bool)
     for iii, neighbors_list in enumerate(neighbors):
-        if len(neighbors_list) < neighbor_threshold:
+        if sum([counts[x] for x in neighbors_list]) < neighbor_threshold:
             density_filter[iii] = False
     if inverted:
         density_filter = ~density_filter
