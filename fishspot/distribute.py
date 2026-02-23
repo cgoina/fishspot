@@ -34,7 +34,7 @@ def distributed_spot_detection(
     """
 
     # set white_tophat defaults
-    if 'radius' not in white_tophat_args:
+    if white_tophat_args is not None and 'radius' not in white_tophat_args:
         white_tophat_args['radius'] = 4
 
     # set psf estimation defaults
@@ -48,9 +48,12 @@ def distributed_spot_detection(
         spot_detection_args['max_radius'] = 6
 
     # compute overlap depth
-    all_radii = [white_tophat_args['radius'],
-                 psf_estimation_args['radius'],
-                 spot_detection_args['max_radius'],]
+    all_radii = []
+    if white_tophat_args is not None:
+        all_radii.append(white_tophat_args['radius'])
+    if psf_estimation_args is not None:
+        all_radii.append(psf_estimation_args['radius'])
+    all_radii.append(spot_detection_args['max_radius'])
     overlap = int(2*max(np.max(x) for x in all_radii))
 
     # compute mask to array ratio
@@ -101,7 +104,8 @@ def distributed_spot_detection(
         processed_block = np.copy(block)
 
         # background subtraction
-        processed_block = fs_filter.white_tophat(processed_block, **white_tophat_args)
+        if white_tophat_args is not None:
+            processed_block = fs_filter.white_tophat(processed_block, **white_tophat_args)
 
         # optional smoothing, Note: should only be with extremely small sigmas
         if gaussian_sigma is not None:
@@ -117,7 +121,8 @@ def distributed_spot_detection(
                         psf_estimation_args['inlier_threshold'] = 0.9
                     psf_estimation_args['inlier_threshold'] -= 0.1
                 else: break
-        processed_block = fs_filter.rl_decon(processed_block, psf, **deconvolution_args)
+        if deconvolution_args is not None:
+            processed_block = fs_filter.rl_decon(processed_block, psf, **deconvolution_args)
 
         # final spot detection
         spots = fs_detect.detect_spots_log(processed_block, **spot_detection_args)
