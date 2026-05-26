@@ -1,10 +1,15 @@
+import logging
 import numpy as np
+
 from skimage.morphology import white_tophat as skimage_white_tophat
 from skimage.exposure import rescale_intensity
 from skimage.restoration import richardson_lucy
 from scipy.spatial import cKDTree
 from scipy.spatial.distance import cdist
 from scipy.ndimage import gaussian_filter
+
+
+logger = logging.getLogger(__name__)
 
 
 def white_tophat(image, radius):
@@ -216,7 +221,8 @@ def maximum_deviation_threshold(image, mask=None, winsorize=(1, 99), sigma=8., r
     # get histogram, get point, return threshold
     foreground = image[mask > 0] if mask is not None else image
     mn, mx = np.percentile(foreground, winsorize).astype(int)
-    hist, edges = np.histogram(foreground, bins=mx - mn, range=(mn, mx), density=True)
+    logger.info(f'Foreground min/max: {mn}/{mx}')
+    hist, edges = np.histogram(foreground, bins=mx-mn, range=(mn, mx), density=True)
     hist = gaussian_filter(hist, sigma=sigma)
     edges = edges[1:]
     return edges[get_point(hist, edges)]
