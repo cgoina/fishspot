@@ -222,6 +222,8 @@ def maximum_deviation_threshold(image, mask=None, winsorize=(1, 99), sigma=8., r
     foreground = image[mask > 0] if mask is not None else image
     mn, mx = np.percentile(foreground, winsorize).astype(int)
     logger.info(f'Foreground min/max: {mn}/{mx}')
+    if mx - mn <= 0:
+        return -1
     hist, edges = np.histogram(foreground, bins=mx-mn, range=(mn, mx), density=True)
     hist = gaussian_filter(hist, sigma=sigma)
     edges = edges[1:]
