@@ -155,7 +155,7 @@ def remove_duplicates(spots1, spots2, radius, return_duplicate_indices=False):
         return spots1_filtered, spots2_filtered
 
 
-def maximum_deviation_threshold(image, mask=None, winsorize=(1, 99), sigma=8., recurse=False, max_steps=1000):
+def maximum_deviation_threshold(image, mask=None, winsorize=(1, 99), sigma=8., max_steps=1000):
     """
     Select a threshold for a unimodal histogram with the maximum deviation method.
     This method draws a straight line from the peak/mode of the histogram to the
@@ -183,11 +183,6 @@ def maximum_deviation_threshold(image, mask=None, winsorize=(1, 99), sigma=8., r
     sigma : float (default: 8.)
         The standard deviation of the gaussian applied to the histogram to smooth
         high frequency components (extra modes/bumps due to noise).
-
-    recurse : bool (default: False)
-        If True this function is called recursively to guarantee that the tail to
-        the right of the found point monotonically decreases. This can cause very
-        long run times and is very sensitive to noise.
 
     max_steps : int (default: 1000)
         Safety cap on the number of get_line/get_point iterations. Each iteration
@@ -234,7 +229,7 @@ def maximum_deviation_threshold(image, mask=None, winsorize=(1, 99), sigma=8., r
             curve_points = np.vstack((edges[peak:], hist[peak:])).T
             dists = np.min(cdist(curve_points, line_points), axis=1)
             point = np.argmax(dists) + peak
-            if not (recurse and np.any(hist[point+1:-1] > hist[point])):  # tail should monotonically decrease
+            if np.all(hist[point+1:-1] <= hist[point]):  # tail should monotonically decrease
                 return offset + point
             offset += peak + 1
             hist = hist[peak+1:]
