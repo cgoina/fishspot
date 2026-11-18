@@ -155,7 +155,7 @@ def remove_duplicates(spots1, spots2, radius, return_duplicate_indices=False):
         return spots1_filtered, spots2_filtered
 
 
-def maximum_deviation_threshold(image, mask=None, winsorize=(1, 99), sigma=8., max_steps=1000):
+def maximum_deviation_threshold(image, mask=None, winsorize=(1, 99), sigma=8., max_iterations=1000):
     """
     Select a threshold for a unimodal histogram with the maximum deviation method.
     This method draws a straight line from the peak/mode of the histogram to the
@@ -184,7 +184,7 @@ def maximum_deviation_threshold(image, mask=None, winsorize=(1, 99), sigma=8., m
         The standard deviation of the gaussian applied to the histogram to smooth
         high frequency components (extra modes/bumps due to noise).
 
-    max_steps : int (default: 1000)
+    max_iterations : int (default: 1000)
         Safety cap on the number of get_line/get_point iterations. Each iteration
         shrinks the working histogram by at least one bin, so convergence within
         len(histogram) steps is guaranteed; this cap just bounds the worst-case
@@ -199,14 +199,14 @@ def maximum_deviation_threshold(image, mask=None, winsorize=(1, 99), sigma=8., m
     """
 
     # function to get line from rightmost mode to endpoint
-    # iterative, not recursive, and capped at max_steps: each step shrinks
+    # iterative, not recursive, and capped at max_iterations: each iteration shrinks
     # hist/edges by at least one element, so this is guaranteed to terminate
     # within len(hist) steps, but the recursive version this replaced could
     # blow Python's call stack on histograms needing hundreds of steps to
     # bound (e.g. a wide, noisy or multi-modal intensity histogram).
     def get_line(hist, edges):
         offset = 0
-        for _ in range(max_steps):
+        for _ in range(max_iterations):
             peak = np.argmax(hist)
             slope = (hist[peak] - hist[-1]) / (edges[peak] - edges[-1])
             intercept = hist[peak] - slope * edges[peak]
@@ -221,7 +221,7 @@ def maximum_deviation_threshold(image, mask=None, winsorize=(1, 99), sigma=8., m
     # a function to get the threshold point from curve and line segment
     def get_point(hist, edges):
         offset = 0
-        for _ in range(max_steps):
+        for _ in range(max_iterations):
             peak, line = get_line(hist, edges)
             if peak is None:
                 return None
@@ -248,6 +248,6 @@ def maximum_deviation_threshold(image, mask=None, winsorize=(1, 99), sigma=8., m
     edges = edges[1:]
     point = get_point(hist, edges)
     if point is None:
-        logger.info(f'Peak search did not converge within {max_steps} steps; no threshold found')
+        logger.info(f'Peak search did not converge within {max_iterations} steps; no threshold found')
         return -1
     return edges[point]

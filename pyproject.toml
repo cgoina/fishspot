@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=70", "setuptools-scm>=8"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fishspot"
+version = "1.1.0"
+description = "EASI-FISH pipeline tools for detecting or processing spots "
+license = "BSD-3-Clause"
+requires-python = ">=3.12"
+authors = [
+    { name = "Greg M. Fleishman", email = "greg.nli10me@gmail.com" }
+]
+dependencies = [
+    "dask==2026.6.0",
+    "dask-array==0.7.1",
+    "numpy>=2.3.4,<3",
+    "scipy>=1.16.3",
+    "scikit-image>=0.26.0",
+    "ClusterWrap",
+    "SimpleITK==3.0.0b1",
+    "zarr==3.2.1"
+]
+
+[project.urls]
+"Bug Tracker" = "https://github.com/GFleishman/fishspot/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64", "linux-aarch64", "osx-arm64" ]
+
+[tool.pixi.dependencies]
+python = "3.12.*"
+
+[tool.pixi.pypi-options]
+index-url = "https://pypi.org/simple"
+# SimpleITK 3.0.0b1 is not on PyPI - pick it up from the GitHub release assets
+find-links = [
+    { url = "https://github.com/SimpleITK/SimpleITK/releases/expanded_assets/v3.0.0b1" },
+]
+
+[tool.pixi.pypi-dependencies]
+fishspot = { path = ".", editable = true }
