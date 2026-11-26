@@ -1,5 +1,5 @@
 import numpy as np
-from skimage.feature import blob_log
+from skimage.feature import blob_dog, blob_log
 
 
 # TODO: potential major improvement - after finding coordinates
@@ -14,6 +14,7 @@ def detect_spots_log(
     max_radius,
     num_sigma=5,
     normalize=False,
+    blob_method='log',
     **kwargs,
 ):
     """
@@ -29,10 +30,19 @@ def detect_spots_log(
     if not isinstance(max_radius, (tuple, list, np.ndarray)):
         max_radius = (max_radius,)*image.ndim
 
+    blob_detect_method = None
+    if blob_method == 'dog':
+        # difference of gaussian
+        blob_detect_method = blob_dog
+    else:
+        # laplacian of gaussian
+        blob_detect_method = blob_log
+        if num_sigma > 0:
+            kwargs['num_sigma'] = num_sigma
+
     # set given arguments, convert pixel radii to kernel widths
     kwargs['min_sigma'] = np.array(min_radius) / np.sqrt(image.ndim)
     kwargs['max_sigma'] = np.array(max_radius) / np.sqrt(image.ndim)
-    kwargs['num_sigma'] = num_sigma
 
     # set additional defaults
     if 'threshold' not in kwargs and 'threshold_rel' not in kwargs:
@@ -41,7 +51,7 @@ def detect_spots_log(
         kwargs['overlap'] = 1.0
 
     # run, convert back to pixel radii, return
-    spots = blob_log(image, **kwargs)
+    spots = blob_detect_method(image, **kwargs)
     spots[:, image.ndim:] *= np.sqrt(image.ndim)
     return spots
 
